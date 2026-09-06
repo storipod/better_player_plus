@@ -1,3 +1,14 @@
+## 1.5.0
+
+* Added `VideoEventType.videoSizeChanged` so `VideoPlayerValue.size` tracks the
+  rendition being decoded instead of staying at whatever loaded first. On an
+  adaptive stream this is what tells you an ABR or `setTrack` switch has taken
+  effect, which previously had no signal on either platform.
+* Android reports it from `Player.Listener.onVideoSizeChanged`, applying pixel
+  aspect ratio and rotation so it matches the iOS value.
+* iOS reports it from the existing `presentationSize` observer, which until now
+  only reached `onReadyToPlay` and was discarded once initialised.
+
 ## 1.4.1
 
 * Added support for Built-in Kotlin on Android (AGP 9.0+) while maintaining full backward compatibility with Flutter 3.41.0+ and AGP < 9 (#128)
