@@ -22,6 +22,10 @@
   dropped frames and a bandwidth estimate on both platforms, plus stall count and
   startup time on iOS. Figures the running platform cannot supply are null rather
   than zero.
+* Added `VideoEventType.tracksChanged` and `VideoPlayerValue.track`, reporting the
+  selected video track's id, dimensions, bitrate, frame rate and codec from the
+  Media3 `onTracksChanged` callback. Android only: AVFoundation exposes no
+  equivalent, so `videoSizeChanged` remains the cross platform signal.
 * Playback now pauses when headphones are unplugged or a Bluetooth device goes
   out of range, rather than continuing out loud on the speaker. Android sets
   `setHandleAudioBecomingNoisy`, iOS observes route changes.

@@ -376,6 +376,7 @@ class VideoEvent {
     this.size,
     this.bitrate,
     this.metrics,
+    this.track,
     this.buffered,
     this.position,
   });
@@ -403,6 +404,8 @@ class VideoEvent {
 
   /// Quality of experience figures, when the event carries them.
   final VideoPlaybackMetrics? metrics;
+  /// Format of the selected video track. Android only.
+  final VideoTrackInfo? track;
 
   /// Buffered parts of the video.
   ///
@@ -453,6 +456,23 @@ class VideoPlaybackMetrics {
   String toString() =>
       'VideoPlaybackMetrics(droppedFrames: $droppedFrames, stallCount: $stallCount, '
       'startupTimeMs: $startupTimeMs, bandwidthEstimate: $bandwidthEstimate)';
+    }
+
+/// The video track the player has selected.
+@immutable
+class VideoTrackInfo {
+  const VideoTrackInfo({this.id, this.width, this.height, this.bitrate, this.frameRate, this.codecs});
+
+  final String? id;
+  final int? width;
+  final int? height;
+  final int? bitrate;
+  final double? frameRate;
+  final String? codecs;
+
+  @override
+  String toString() =>
+      'VideoTrackInfo(id: $id, ${width}x$height, bitrate: $bitrate, frameRate: $frameRate, codecs: $codecs)';
 }
 
 enum VideoEventType {
@@ -495,6 +515,11 @@ enum VideoEventType {
 
   /// Playback quality figures were updated.
   playbackMetrics,
+  /// The selected video track changed.
+  ///
+  /// Android only. AVFoundation exposes no equivalent, so on iOS use
+  /// [videoSizeChanged], which both platforms report.
+  tracksChanged,
 
   /// An unknown event has been received.
   unknown,
