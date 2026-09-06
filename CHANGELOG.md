@@ -1,5 +1,8 @@
 ## 1.5.0
 
+* Fixed automatic Picture in Picture on Android emitting no events. The system
+  starts those sessions itself, so `enablePictureInPicture` never ran and neither
+  `pipStart` nor the exit poll that produces `pipStop` and `pipRestore` fired.
 * Fixed a duplicate `androidx.media3.common.Format` import that broke the Android
   build with an ambiguous import error.
 * Android now starts Picture in Picture automatically when the viewer leaves the

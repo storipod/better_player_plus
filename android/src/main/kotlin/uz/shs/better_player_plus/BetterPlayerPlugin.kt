@@ -106,6 +106,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun detachActivity() {
+        stopAutoEnterWatch()
         activityBinding?.removeOnUserLeaveHintListener(userLeaveHintListener)
         activityBinding = null
         activity = null
@@ -122,9 +123,12 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     /// The player that should follow the viewer out of the app, mirroring the iOS
     /// behaviour where an inline playing video starts PiP on its own.
     private var autoEnterPlayer: BetterPlayer? = null
+    private var autoEnterHandler: Handler? = null
+    private var autoEnterRunnable: Runnable? = null
 
     private fun setAutoPictureInPicture(player: BetterPlayer, enabled: Boolean) {
         autoEnterPlayer = if (enabled) player else null
+        if (enabled) startAutoEnterWatch(player) else stopAutoEnterWatch()
         val currentActivity = activity ?: return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         currentActivity.setPictureInPictureParams(
@@ -518,6 +522,30 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         activity!!.moveTaskToBack(false)
         player.onPictureInPictureStatusChanged(false)
         player.disposeMediaSession()
+    }
+
+    /// The system starts an auto entered session itself, so enablePictureInPicture
+    /// never runs and the events it emits never fire. Watching for the mode to
+    /// turn on is the only way to notice a session the app did not request.
+    private fun startAutoEnterWatch(player: BetterPlayer) {
+        stopAutoEnterWatch()
+        autoEnterHandler = Handler(Looper.getMainLooper())
+        autoEnterRunnable = Runnable {
+            if (activity?.isInPictureInPictureMode == true) {
+                stopAutoEnterWatch()
+                player.onPictureInPictureStatusChanged(true)
+                startPictureInPictureListenerTimer(player)
+            } else {
+                autoEnterHandler?.postDelayed(autoEnterRunnable!!, 250)
+            }
+        }
+        autoEnterHandler?.postDelayed(autoEnterRunnable!!, 250)
+    }
+
+    private fun stopAutoEnterWatch() {
+        autoEnterRunnable?.let { autoEnterHandler?.removeCallbacks(it) }
+        autoEnterHandler = null
+        autoEnterRunnable = null
     }
 
     private fun startPictureInPictureListenerTimer(player: BetterPlayer) {
