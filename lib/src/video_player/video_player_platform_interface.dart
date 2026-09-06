@@ -374,6 +374,7 @@ class VideoEvent {
     required this.key,
     this.duration,
     this.size,
+    this.bitrate,
     this.buffered,
     this.position,
   });
@@ -395,6 +396,9 @@ class VideoEvent {
   ///
   /// Only used if [eventType] is [VideoEventType.initialized].
   final Size? size;
+
+  /// Bits per second of the rendition being decoded.
+  final int? bitrate;
 
   /// Buffered parts of the video.
   ///
@@ -457,6 +461,9 @@ enum VideoEventType {
   /// The dimensions of the video changed, which on an adaptive stream means
   /// a different rendition is now being decoded.
   videoSizeChanged,
+
+  /// The bitrate of the video being decoded changed.
+  videoBitrateChanged,
 
   /// An unknown event has been received.
   unknown,

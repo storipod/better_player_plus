@@ -114,6 +114,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             item.addObserver(self, forKeyPath: "playbackBufferEmpty", options: [], context: &playbackBufferEmptyContext)
             item.addObserver(self, forKeyPath: "playbackBufferFull", options: [], context: &playbackBufferFullContext)
             NotificationCenter.default.addObserver(self, selector: #selector(itemDidPlayToEndTime(_:)), name: .AVPlayerItemDidPlayToEndTime, object: item)
+            NotificationCenter.default.addObserver(self, selector: #selector(itemNewAccessLogEntry(_:)), name: .AVPlayerItemNewAccessLogEntry, object: item)
             observedItem = item
             observersAdded = true
         }
@@ -130,9 +131,21 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             item?.removeObserver(self, forKeyPath: "playbackBufferEmpty", context: &playbackBufferEmptyContext)
             item?.removeObserver(self, forKeyPath: "playbackBufferFull", context: &playbackBufferFullContext)
             NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: item)
+            NotificationCenter.default.removeObserver(self, name: .AVPlayerItemNewAccessLogEntry, object: item)
             observedItem = nil
             observersAdded = false
         }
+    }
+
+    /// AVPlayer appends an access log entry on every variant switch, and its
+    /// indicatedBitrate is the declared bitrate of the rendition now playing.
+    @objc private func itemNewAccessLogEntry(_ notification: Notification) {
+        guard let eventSink = eventSink, key != nil else { return }
+        guard let item = notification.object as? AVPlayerItem else { return }
+        guard let entry = item.accessLog()?.events.last, entry.indicatedBitrate > 0 else { return }
+        eventSink(["event": "videoBitrateChanged",
+                   "bitrate": NSNumber(value: Int(entry.indicatedBitrate)),
+                   "key": key as Any])
     }
 
     @objc private func itemDidPlayToEndTime(_ notification: Notification) {
