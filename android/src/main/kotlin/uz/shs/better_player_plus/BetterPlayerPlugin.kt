@@ -127,6 +127,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private var autoEnterRunnable: Runnable? = null
 
     private fun setAutoPictureInPicture(player: BetterPlayer, enabled: Boolean) {
+        Log.d(TAG, "auto pip enabled=$enabled sdk=${Build.VERSION.SDK_INT} activity=${activity != null}")
         autoEnterPlayer = if (enabled) player else null
         if (enabled) startAutoEnterWatch(player) else stopAutoEnterWatch()
         val currentActivity = activity ?: return
@@ -528,10 +529,12 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     /// never runs and the events it emits never fire. Watching for the mode to
     /// turn on is the only way to notice a session the app did not request.
     private fun startAutoEnterWatch(player: BetterPlayer) {
+        Log.d(TAG, "auto pip watch armed")
         stopAutoEnterWatch()
         autoEnterHandler = Handler(Looper.getMainLooper())
         autoEnterRunnable = Runnable {
             if (activity?.isInPictureInPictureMode == true) {
+                Log.d(TAG, "auto pip detected, emitting pipStart")
                 stopAutoEnterWatch()
                 player.onPictureInPictureStatusChanged(true)
                 startPictureInPictureListenerTimer(player)
