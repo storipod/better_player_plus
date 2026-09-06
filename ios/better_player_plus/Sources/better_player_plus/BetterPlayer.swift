@@ -142,10 +142,27 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     @objc private func itemNewAccessLogEntry(_ notification: Notification) {
         guard let eventSink = eventSink, key != nil else { return }
         guard let item = notification.object as? AVPlayerItem else { return }
-        guard let entry = item.accessLog()?.events.last, entry.indicatedBitrate > 0 else { return }
-        eventSink(["event": "videoBitrateChanged",
-                   "bitrate": NSNumber(value: Int(entry.indicatedBitrate)),
-                   "key": key as Any])
+        guard let entry = item.accessLog()?.events.last else { return }
+        if entry.indicatedBitrate > 0 {
+            eventSink(["event": "videoBitrateChanged",
+                       "bitrate": NSNumber(value: Int(entry.indicatedBitrate)),
+                       "key": key as Any])
+        }
+
+        var metrics: [String: Any] = ["event": "playbackMetrics", "key": key as Any]
+        if entry.numberOfDroppedVideoFrames >= 0 {
+            metrics["droppedFrames"] = NSNumber(value: entry.numberOfDroppedVideoFrames)
+        }
+        if entry.numberOfStalls >= 0 {
+            metrics["stallCount"] = NSNumber(value: entry.numberOfStalls)
+        }
+        if entry.startupTime > 0 {
+            metrics["startupTimeMs"] = NSNumber(value: Int(entry.startupTime * 1000))
+        }
+        if entry.observedBitrate > 0 {
+            metrics["bandwidthEstimate"] = NSNumber(value: Int(entry.observedBitrate))
+        }
+        eventSink(metrics)
     }
 
     @objc private func itemDidPlayToEndTime(_ notification: Notification) {

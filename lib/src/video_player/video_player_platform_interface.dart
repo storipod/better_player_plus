@@ -375,6 +375,7 @@ class VideoEvent {
     this.duration,
     this.size,
     this.bitrate,
+    this.metrics,
     this.buffered,
     this.position,
   });
@@ -399,6 +400,9 @@ class VideoEvent {
 
   /// Bits per second of the rendition being decoded.
   final int? bitrate;
+
+  /// Quality of experience figures, when the event carries them.
+  final VideoPlaybackMetrics? metrics;
 
   /// Buffered parts of the video.
   ///
@@ -427,6 +431,30 @@ class VideoEvent {
 ///
 /// Emitted by the platform implementation when the video is initialized or
 /// completed or to communicate buffering events.
+/// Quality of experience figures. Fields the running platform cannot supply are
+/// null rather than zero, so a missing measurement is not read as a good one.
+@immutable
+class VideoPlaybackMetrics {
+  const VideoPlaybackMetrics({this.droppedFrames, this.stallCount, this.startupTimeMs, this.bandwidthEstimate});
+
+  /// Frames the decoder could not render in time, cumulative.
+  final int? droppedFrames;
+
+  /// Rebuffers since playback began. iOS only.
+  final int? stallCount;
+
+  /// Time from load to the first frame. iOS only.
+  final int? startupTimeMs;
+
+  /// The player's own estimate of available bandwidth, bits per second.
+  final int? bandwidthEstimate;
+
+  @override
+  String toString() =>
+      'VideoPlaybackMetrics(droppedFrames: $droppedFrames, stallCount: $stallCount, '
+      'startupTimeMs: $startupTimeMs, bandwidthEstimate: $bandwidthEstimate)';
+}
+
 enum VideoEventType {
   /// The video has been initialized.
   initialized,
@@ -464,6 +492,9 @@ enum VideoEventType {
 
   /// The bitrate of the video being decoded changed.
   videoBitrateChanged,
+
+  /// Playback quality figures were updated.
+  playbackMetrics,
 
   /// An unknown event has been received.
   unknown,

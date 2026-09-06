@@ -257,6 +257,17 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
               key: key,
               bitrate: (map['bitrate'] as num).toInt(),
             );
+          case 'playbackMetrics':
+            return VideoEvent(
+              eventType: VideoEventType.playbackMetrics,
+              key: key,
+              metrics: VideoPlaybackMetrics(
+                droppedFrames: (map['droppedFrames'] as num?)?.toInt(),
+                stallCount: (map['stallCount'] as num?)?.toInt(),
+                startupTimeMs: (map['startupTimeMs'] as num?)?.toInt(),
+                bandwidthEstimate: (map['bandwidthEstimate'] as num?)?.toInt(),
+              ),
+            );
           case 'completed':
             return VideoEvent(eventType: VideoEventType.completed, key: key);
           case 'bufferingUpdate':
