@@ -1,5 +1,9 @@
 ## 1.5.0
 
+* Fixed a duplicate `BetterPlayerPlugin` definition that broke CocoaPods builds.
+  `BetterPlayerPlugin.h` is excluded from both the SPM target and the podspec
+  sources, but `public_header_files` still shipped it, so the registrant imported
+  a declaration with one protocol while the Swift module declared two.
 * Added `VideoEventType.videoSizeChanged` so `VideoPlayerValue.size` tracks the
   rendition being decoded instead of staying at whatever loaded first. On an
   adaptive stream this is what tells you an ABR or `setTrack` switch has taken
