@@ -1108,6 +1108,8 @@ class BetterPlayerController {
         );
       case VideoEventType.bufferingEnd:
         _postEvent(BetterPlayerEvent(BetterPlayerEventType.bufferingEnd));
+      case VideoEventType.pipRestore:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.pipRestore));
       default:
         break;
     }

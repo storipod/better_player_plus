@@ -1,5 +1,9 @@
 ## 1.5.0
 
+* Added `BetterPlayerEventType.pipRestore`, emitted when the viewer taps the
+  Picture in Picture window to return to the app. `pipStop` fires for both that
+  and closing the window, so an app that gave up its player route could not tell
+  which had happened. iOS only; Android brings the activity back itself.
 * Fixed a duplicate `BetterPlayerPlugin` definition that broke CocoaPods builds.
   `BetterPlayerPlugin.h` is excluded from both the SPM target and the podspec
   sources, but `public_header_files` still shipped it, so the registrant imported
