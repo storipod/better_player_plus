@@ -15,6 +15,9 @@
   were indistinguishable.
 * Fixed a non `PlatformException` error being discarded by a `copyWith` whose
   result was never assigned.
+* Added `VideoEventType.videoBitrateChanged` and `VideoPlayerValue.bitrate`, from
+  the Media3 `onVideoInputFormatChanged` analytics callback on Android and the
+  `indicatedBitrate` of the newest access log entry on iOS.
 
 ## 1.4.1
 

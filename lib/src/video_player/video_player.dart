@@ -33,6 +33,7 @@ class VideoPlayerValue {
     this.speed = 1.0,
     this.errorDescription,
     this.errorDetails,
+    this.bitrate,
     this.isPip = false,
     this.aspectRatioIOS = '',
   });
@@ -78,6 +79,10 @@ class VideoPlayerValue {
   /// A description of the error if present.
   ///
   /// If [hasError] is false this is [null].
+  /// Bits per second of the rendition being decoded, once the platform has
+  /// reported one. Null until then.
+  final int? bitrate;
+
   final String? errorDescription;
 
   /// Platform detail behind [errorDescription]. Android sends the Media3
@@ -131,6 +136,7 @@ class VideoPlayerValue {
     double? volume,
     String? errorDescription,
     Map<String, dynamic>? errorDetails,
+    int? bitrate,
     double? speed,
     bool? isPip,
     String? aspectRatioIOS,
@@ -147,6 +153,7 @@ class VideoPlayerValue {
     speed: speed ?? this.speed,
     errorDescription: errorDescription ?? this.errorDescription,
     errorDetails: errorDetails ?? this.errorDetails,
+    bitrate: bitrate ?? this.bitrate,
     isPip: isPip ?? this.isPip,
     aspectRatioIOS: aspectRatioIOS ?? this.aspectRatioIOS,
   );
@@ -228,6 +235,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           _applyPlayPause();
         case VideoEventType.videoSizeChanged:
           value = value.copyWith(size: event.size);
+        case VideoEventType.videoBitrateChanged:
+          value = value.copyWith(bitrate: event.bitrate);
         case VideoEventType.completed:
           value = value.copyWith(isPlaying: false, position: value.duration);
           _timer?.cancel();
