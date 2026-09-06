@@ -274,6 +274,19 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
               key: key,
               cues: (map['cues'] as List?)?.map((cue) => cue.toString()).toList() ?? const [],
             );
+          case 'tracksChanged':
+            return VideoEvent(
+              eventType: VideoEventType.tracksChanged,
+              key: key,
+              track: VideoTrackInfo(
+                id: map['trackId'] as String?,
+                width: (map['width'] as num?)?.toInt(),
+                height: (map['height'] as num?)?.toInt(),
+                bitrate: (map['bitrate'] as num?)?.toInt(),
+                frameRate: (map['frameRate'] as num?)?.toDouble(),
+                codecs: map['codecs'] as String?,
+              ),
+            );
           case 'completed':
             return VideoEvent(eventType: VideoEventType.completed, key: key);
           case 'bufferingUpdate':

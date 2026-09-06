@@ -117,6 +117,8 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             NotificationCenter.default.addObserver(self, selector: #selector(itemDidPlayToEndTime(_:)), name: .AVPlayerItemDidPlayToEndTime, object: item)
             NotificationCenter.default.addObserver(self, selector: #selector(itemNewAccessLogEntry(_:)), name: .AVPlayerItemNewAccessLogEntry, object: item)
             addLegibleOutput(item)
+            NotificationCenter.default.addObserver(self, selector: #selector(audioSessionInterrupted(_:)), name: .AVAudioSessionInterruption, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(audioRouteChanged(_:)), name: .AVAudioSessionRouteChange, object: nil)
             observedItem = item
             observersAdded = true
         }
@@ -135,6 +137,8 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: item)
             NotificationCenter.default.removeObserver(self, name: .AVPlayerItemNewAccessLogEntry, object: item)
             removeLegibleOutput(item)
+            NotificationCenter.default.removeObserver(self, name: .AVAudioSessionInterruption, object: nil)
+            NotificationCenter.default.removeObserver(self, name: .AVAudioSessionRouteChange, object: nil)
             observedItem = nil
             observersAdded = false
         }
@@ -182,6 +186,22 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
         output.setDelegate(nil, queue: nil)
         item?.remove(output)
         legibleOutput = nil
+    }
+
+    /// A call or alarm silences playback natively. Without this the player keeps
+    /// reporting itself as playing, so the app's controls disagree with reality.
+    @objc private func audioSessionInterrupted(_ notification: Notification) {
+        guard let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+        if type == .began { pause() }
+    }
+
+    /// Unplugging headphones or leaving Bluetooth range would otherwise route the
+    /// audio to the speaker and keep playing.
+    @objc private func audioRouteChanged(_ notification: Notification) {
+        guard let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: raw) else { return }
+        if reason == .oldDeviceUnavailable { pause() }
     }
 
     @objc private func itemDidPlayToEndTime(_ notification: Notification) {

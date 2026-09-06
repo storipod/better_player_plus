@@ -36,6 +36,7 @@ class VideoPlayerValue {
     this.bitrate,
     this.metrics,
     this.cues = const [],
+    this.track,
     this.isPip = false,
     this.aspectRatioIOS = '',
   });
@@ -91,6 +92,8 @@ class VideoPlayerValue {
   /// stream itself, unlike the sources parsed in Dart, so muxed captions that
   /// were previously decoded and discarded now reach the app.
   final List<String> cues;
+  /// The video track the player selected. Android only.
+  final VideoTrackInfo? track;
 
   final String? errorDescription;
 
@@ -148,6 +151,7 @@ class VideoPlayerValue {
     int? bitrate,
     VideoPlaybackMetrics? metrics,
     List<String>? cues,
+    VideoTrackInfo? track,
     double? speed,
     bool? isPip,
     String? aspectRatioIOS,
@@ -167,6 +171,7 @@ class VideoPlayerValue {
     bitrate: bitrate ?? this.bitrate,
     metrics: metrics ?? this.metrics,
     cues: cues ?? this.cues,
+    track: track ?? this.track,
     isPip: isPip ?? this.isPip,
     aspectRatioIOS: aspectRatioIOS ?? this.aspectRatioIOS,
   );
@@ -254,6 +259,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           value = value.copyWith(bitrate: event.bitrate);
         case VideoEventType.cuesChanged:
           value = value.copyWith(cues: event.cues ?? const []);
+        case VideoEventType.tracksChanged:
+          value = value.copyWith(track: event.track);
         case VideoEventType.completed:
           value = value.copyWith(isPlaying: false, position: value.duration);
           _timer?.cancel();

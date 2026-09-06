@@ -42,7 +42,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.Format
 import androidx.media3.common.Timeline
+import androidx.media3.common.Tracks
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
@@ -507,6 +509,8 @@ internal class BetterPlayer(
                 sendPlaybackMetrics()
             }
         })
+        // Pause instead of switching to the speaker when headphones are removed.
+        exoPlayer?.setHandleAudioBecomingNoisy(true)
         exoPlayer?.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
@@ -550,6 +554,10 @@ internal class BetterPlayer(
                 event["key"] = key
                 event["cues"] = cueGroup.cues.mapNotNull { it.text?.toString() }
                 eventSink.success(event)
+            }
+
+            override fun onTracksChanged(tracks: Tracks) {
+                sendTracksChanged(tracks)
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -728,6 +736,29 @@ internal class BetterPlayer(
         event["droppedFrames"] = totalDroppedFrames
         if (lastBandwidthEstimate > 0) event["bandwidthEstimate"] = lastBandwidthEstimate
         eventSink.success(event)
+    }
+
+    /// Reports the selected video track. Size alone says the picture changed,
+    /// this says which variant won, including its declared bitrate and codec.
+    private fun sendTracksChanged(tracks: Tracks) {
+        for (group in tracks.groups) {
+            if (group.type != C.TRACK_TYPE_VIDEO) continue
+            for (index in 0 until group.length) {
+                if (!group.isTrackSelected(index)) continue
+                val format = group.getTrackFormat(index)
+                val event: MutableMap<String, Any?> = HashMap()
+                event["event"] = "tracksChanged"
+                event["key"] = key
+                event["trackId"] = format.id
+                if (format.width != Format.NO_VALUE) event["width"] = format.width
+                if (format.height != Format.NO_VALUE) event["height"] = format.height
+                if (format.bitrate != Format.NO_VALUE) event["bitrate"] = format.bitrate
+                if (format.frameRate != Format.NO_VALUE.toFloat()) event["frameRate"] = format.frameRate
+                event["codecs"] = format.codecs
+                eventSink.success(event)
+                return
+            }
+        }
     }
 
     private fun getDuration(): Long = exoPlayer?.duration ?: 0L
