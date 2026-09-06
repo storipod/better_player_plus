@@ -117,8 +117,8 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             NotificationCenter.default.addObserver(self, selector: #selector(itemDidPlayToEndTime(_:)), name: .AVPlayerItemDidPlayToEndTime, object: item)
             NotificationCenter.default.addObserver(self, selector: #selector(itemNewAccessLogEntry(_:)), name: .AVPlayerItemNewAccessLogEntry, object: item)
             addLegibleOutput(item)
-            NotificationCenter.default.addObserver(self, selector: #selector(audioSessionInterrupted(_:)), name: .AVAudioSessionInterruption, object: nil)
-            NotificationCenter.default.addObserver(self, selector: #selector(audioRouteChanged(_:)), name: .AVAudioSessionRouteChange, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(audioSessionInterrupted(_:)), name: AVAudioSession.interruptionNotification, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(audioRouteChanged(_:)), name: AVAudioSession.routeChangeNotification, object: nil)
             observedItem = item
             observersAdded = true
         }
@@ -137,8 +137,8 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: item)
             NotificationCenter.default.removeObserver(self, name: .AVPlayerItemNewAccessLogEntry, object: item)
             removeLegibleOutput(item)
-            NotificationCenter.default.removeObserver(self, name: .AVAudioSessionInterruption, object: nil)
-            NotificationCenter.default.removeObserver(self, name: .AVAudioSessionRouteChange, object: nil)
+            NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: AVAudioSession.routeChangeNotification, object: nil)
             observedItem = nil
             observersAdded = false
         }
