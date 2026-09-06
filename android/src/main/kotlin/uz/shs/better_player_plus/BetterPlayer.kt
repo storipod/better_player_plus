@@ -49,6 +49,7 @@ import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -505,7 +506,7 @@ internal class BetterPlayer(
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                eventSink.error("VideoError", "Video player had error $error", "")
+                eventSink.error("VideoError", "Video player had error $error", errorDetails(error))
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -647,6 +648,25 @@ internal class BetterPlayer(
         event["width"] = width
         event["height"] = height
         eventSink.success(event)
+    }
+
+    /// A stringified exception cannot be branched on. The Media3 code and, where
+    /// the failure came from a response, the HTTP status let the app tell an
+    /// expired token from a dead network.
+    private fun errorDetails(error: PlaybackException): Map<String, Any?> {
+        val details = mutableMapOf<String, Any?>(
+            "code" to error.errorCode,
+            "codeName" to error.errorCodeName,
+        )
+        when (val cause = error.cause) {
+            is HttpDataSource.InvalidResponseCodeException -> {
+                details["httpStatus"] = cause.responseCode
+                details["cause"] = cause.toString()
+            }
+            null -> {}
+            else -> details["cause"] = cause.toString()
+        }
+        return details
     }
 
     private fun getDuration(): Long = exoPlayer?.duration ?: 0L
