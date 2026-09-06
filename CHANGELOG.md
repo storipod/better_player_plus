@@ -22,6 +22,11 @@
   dropped frames and a bandwidth estimate on both platforms, plus stall count and
   startup time on iOS. Figures the running platform cannot supply are null rather
   than zero.
+* Added `VideoEventType.cuesChanged` and `VideoPlayerValue.cues`, carrying the
+  subtitle lines the platform is rendering. Android reports them from `onCues`,
+  iOS from an `AVPlayerItemLegibleOutput`. Captions muxed into the stream were
+  previously decoded and discarded, since only separately declared subtitle
+  renditions were parsed in Dart.
 * Added `VideoEventType.tracksChanged` and `VideoPlayerValue.track`, reporting the
   selected video track's id, dimensions, bitrate, frame rate and codec from the
   Media3 `onTracksChanged` callback. Android only: AVFoundation exposes no

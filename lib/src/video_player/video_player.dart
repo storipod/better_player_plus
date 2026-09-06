@@ -35,6 +35,7 @@ class VideoPlayerValue {
     this.errorDetails,
     this.bitrate,
     this.metrics,
+    this.cues = const [],
     this.track,
     this.isPip = false,
     this.aspectRatioIOS = '',
@@ -87,6 +88,10 @@ class VideoPlayerValue {
 
   /// Latest quality of experience figures reported by the platform.
   final VideoPlaybackMetrics? metrics;
+  /// Subtitle lines the platform is rendering right now. These come from the
+  /// stream itself, unlike the sources parsed in Dart, so muxed captions that
+  /// were previously decoded and discarded now reach the app.
+  final List<String> cues;
   /// The video track the player selected. Android only.
   final VideoTrackInfo? track;
 
@@ -145,6 +150,7 @@ class VideoPlayerValue {
     Map<String, dynamic>? errorDetails,
     int? bitrate,
     VideoPlaybackMetrics? metrics,
+    List<String>? cues,
     VideoTrackInfo? track,
     double? speed,
     bool? isPip,
@@ -164,6 +170,7 @@ class VideoPlayerValue {
     errorDetails: errorDetails ?? this.errorDetails,
     bitrate: bitrate ?? this.bitrate,
     metrics: metrics ?? this.metrics,
+    cues: cues ?? this.cues,
     track: track ?? this.track,
     isPip: isPip ?? this.isPip,
     aspectRatioIOS: aspectRatioIOS ?? this.aspectRatioIOS,
@@ -250,6 +257,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           value = value.copyWith(metrics: event.metrics);
         case VideoEventType.videoBitrateChanged:
           value = value.copyWith(bitrate: event.bitrate);
+        case VideoEventType.cuesChanged:
+          value = value.copyWith(cues: event.cues ?? const []);
         case VideoEventType.tracksChanged:
           value = value.copyWith(track: event.track);
         case VideoEventType.completed:

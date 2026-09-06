@@ -376,6 +376,7 @@ class VideoEvent {
     this.size,
     this.bitrate,
     this.metrics,
+    this.cues,
     this.track,
     this.buffered,
     this.position,
@@ -404,6 +405,8 @@ class VideoEvent {
 
   /// Quality of experience figures, when the event carries them.
   final VideoPlaybackMetrics? metrics;
+  /// Subtitle lines active at this moment, empty when the cue cleared.
+  final List<String>? cues;
   /// Format of the selected video track. Android only.
   final VideoTrackInfo? track;
 
@@ -515,6 +518,8 @@ enum VideoEventType {
 
   /// Playback quality figures were updated.
   playbackMetrics,
+  /// The subtitle text the platform is currently rendering changed.
+  cuesChanged,
   /// The selected video track changed.
   ///
   /// Android only. AVFoundation exposes no equivalent, so on iOS use
