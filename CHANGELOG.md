@@ -1,5 +1,13 @@
 ## 1.5.0
 
+* Fixed `pipStart` never being posted for a session the app did not start. Only
+  leaving PiP posted an event, so automatic entry set the internal flag and told
+  the app nothing.
+* The Android restore check now waits for window focus to settle, which it has
+  not done at the instant the mode flips, so expanding was read as closing.
+* Fixed automatic Picture in Picture on Android emitting no events. The system
+  starts those sessions itself, so `enablePictureInPicture` never ran and neither
+  `pipStart` nor the exit poll that produces `pipStop` and `pipRestore` fired.
 * Fixed a duplicate `androidx.media3.common.Format` import that broke the Android
   build with an ambiguous import error.
 * Android now starts Picture in Picture automatically when the viewer leaves the

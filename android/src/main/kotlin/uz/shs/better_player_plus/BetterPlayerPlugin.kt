@@ -106,6 +106,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun detachActivity() {
+        stopAutoEnterWatch()
         activityBinding?.removeOnUserLeaveHintListener(userLeaveHintListener)
         activityBinding = null
         activity = null
@@ -122,9 +123,13 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     /// The player that should follow the viewer out of the app, mirroring the iOS
     /// behaviour where an inline playing video starts PiP on its own.
     private var autoEnterPlayer: BetterPlayer? = null
+    private var autoEnterHandler: Handler? = null
+    private var autoEnterRunnable: Runnable? = null
 
     private fun setAutoPictureInPicture(player: BetterPlayer, enabled: Boolean) {
+        Log.d(TAG, "auto pip enabled=$enabled sdk=${Build.VERSION.SDK_INT} activity=${activity != null}")
         autoEnterPlayer = if (enabled) player else null
+        if (enabled) startAutoEnterWatch(player) else stopAutoEnterWatch()
         val currentActivity = activity ?: return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         currentActivity.setPictureInPictureParams(
@@ -520,6 +525,32 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         player.disposeMediaSession()
     }
 
+    /// The system starts an auto entered session itself, so enablePictureInPicture
+    /// never runs and the events it emits never fire. Watching for the mode to
+    /// turn on is the only way to notice a session the app did not request.
+    private fun startAutoEnterWatch(player: BetterPlayer) {
+        Log.d(TAG, "auto pip watch armed")
+        stopAutoEnterWatch()
+        autoEnterHandler = Handler(Looper.getMainLooper())
+        autoEnterRunnable = Runnable {
+            if (activity?.isInPictureInPictureMode == true) {
+                Log.d(TAG, "auto pip detected, emitting pipStart")
+                stopAutoEnterWatch()
+                player.onPictureInPictureStatusChanged(true)
+                startPictureInPictureListenerTimer(player)
+            } else {
+                autoEnterHandler?.postDelayed(autoEnterRunnable!!, 250)
+            }
+        }
+        autoEnterHandler?.postDelayed(autoEnterRunnable!!, 250)
+    }
+
+    private fun stopAutoEnterWatch() {
+        autoEnterRunnable?.let { autoEnterHandler?.removeCallbacks(it) }
+        autoEnterHandler = null
+        autoEnterRunnable = null
+    }
+
     private fun startPictureInPictureListenerTimer(player: BetterPlayer) {
         pipHandler = Handler(Looper.getMainLooper())
         pipRunnable = Runnable {
@@ -531,12 +562,19 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 // window returns the activity to the foreground with focus; closing
                 // it leaves the activity in the background. That difference is the
                 // only signal available here.
-                if (currentActivity?.hasWindowFocus() == true) {
-                    player.onPictureInPictureRestored()
-                }
-                player.onPictureInPictureStatusChanged(false)
-                player.disposeMediaSession()
                 stopPipHandler()
+                // Focus has not settled the instant the mode flips, so reading it
+                // immediately reports a restore as a close.
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (activity?.hasWindowFocus() == true) {
+                        Log.d(TAG, "pip expanded, emitting pipRestore")
+                        player.onPictureInPictureRestored()
+                    } else {
+                        Log.d(TAG, "pip closed")
+                    }
+                    player.onPictureInPictureStatusChanged(false)
+                    player.disposeMediaSession()
+                }, 300)
             }
         }
         pipHandler!!.post(pipRunnable!!)
