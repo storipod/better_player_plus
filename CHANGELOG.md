@@ -36,6 +36,9 @@
   `setHandleAudioBecomingNoisy`, iOS observes route changes.
 * iOS now observes audio session interruptions, so a call or alarm no longer
   leaves the player reporting itself as playing after the system silenced it.
+* Fixed the iOS audio session observers using the Swift 3 era notification names,
+  which do not compile. AVFoundation renames these through apinotes rather than
+  NS_SWIFT_NAME in the header.
 
 ## 1.4.1
 
