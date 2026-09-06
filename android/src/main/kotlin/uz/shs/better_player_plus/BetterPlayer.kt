@@ -486,6 +486,25 @@ internal class BetterPlayer(
                 event["bitrate"] = bitrate
                 eventSink.success(event)
             }
+
+            override fun onDroppedVideoFrames(
+                eventTime: AnalyticsListener.EventTime,
+                droppedFrames: Int,
+                elapsedMs: Long,
+            ) {
+                totalDroppedFrames += droppedFrames
+                sendPlaybackMetrics()
+            }
+
+            override fun onBandwidthEstimate(
+                eventTime: AnalyticsListener.EventTime,
+                totalLoadTimeMs: Int,
+                totalBytesLoaded: Long,
+                bitrateEstimate: Long,
+            ) {
+                lastBandwidthEstimate = bitrateEstimate
+                sendPlaybackMetrics()
+            }
         })
         exoPlayer?.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -686,6 +705,20 @@ internal class BetterPlayer(
             else -> details["cause"] = cause.toString()
         }
         return details
+    }
+
+    private var totalDroppedFrames = 0
+    private var lastBandwidthEstimate = 0L
+
+    /// Media3 has no stall count or startup time, so those stay null and the app
+    /// can tell a missing measurement from a good one.
+    private fun sendPlaybackMetrics() {
+        val event: MutableMap<String, Any?> = HashMap()
+        event["event"] = "playbackMetrics"
+        event["key"] = key
+        event["droppedFrames"] = totalDroppedFrames
+        if (lastBandwidthEstimate > 0) event["bandwidthEstimate"] = lastBandwidthEstimate
+        eventSink.success(event)
     }
 
     private fun getDuration(): Long = exoPlayer?.duration ?: 0L

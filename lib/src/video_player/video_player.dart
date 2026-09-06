@@ -34,6 +34,7 @@ class VideoPlayerValue {
     this.errorDescription,
     this.errorDetails,
     this.bitrate,
+    this.metrics,
     this.isPip = false,
     this.aspectRatioIOS = '',
   });
@@ -82,6 +83,9 @@ class VideoPlayerValue {
   /// Bits per second of the rendition being decoded, once the platform has
   /// reported one. Null until then.
   final int? bitrate;
+
+  /// Latest quality of experience figures reported by the platform.
+  final VideoPlaybackMetrics? metrics;
 
   final String? errorDescription;
 
@@ -137,6 +141,7 @@ class VideoPlayerValue {
     String? errorDescription,
     Map<String, dynamic>? errorDetails,
     int? bitrate,
+    VideoPlaybackMetrics? metrics,
     double? speed,
     bool? isPip,
     String? aspectRatioIOS,
@@ -154,6 +159,7 @@ class VideoPlayerValue {
     errorDescription: errorDescription ?? this.errorDescription,
     errorDetails: errorDetails ?? this.errorDetails,
     bitrate: bitrate ?? this.bitrate,
+    metrics: metrics ?? this.metrics,
     isPip: isPip ?? this.isPip,
     aspectRatioIOS: aspectRatioIOS ?? this.aspectRatioIOS,
   );
@@ -235,6 +241,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           _applyPlayPause();
         case VideoEventType.videoSizeChanged:
           value = value.copyWith(size: event.size);
+        case VideoEventType.playbackMetrics:
+          value = value.copyWith(metrics: event.metrics);
         case VideoEventType.videoBitrateChanged:
           value = value.copyWith(bitrate: event.bitrate);
         case VideoEventType.completed:

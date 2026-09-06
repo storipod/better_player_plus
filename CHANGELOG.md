@@ -18,6 +18,10 @@
 * Added `VideoEventType.videoBitrateChanged` and `VideoPlayerValue.bitrate`, from
   the Media3 `onVideoInputFormatChanged` analytics callback on Android and the
   `indicatedBitrate` of the newest access log entry on iOS.
+* Added `VideoEventType.playbackMetrics` and `VideoPlayerValue.metrics`, carrying
+  dropped frames and a bandwidth estimate on both platforms, plus stall count and
+  startup time on iOS. Figures the running platform cannot supply are null rather
+  than zero.
 
 ## 1.4.1
 
