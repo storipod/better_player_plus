@@ -22,6 +22,11 @@
   dropped frames and a bandwidth estimate on both platforms, plus stall count and
   startup time on iOS. Figures the running platform cannot supply are null rather
   than zero.
+* Playback now pauses when headphones are unplugged or a Bluetooth device goes
+  out of range, rather than continuing out loud on the speaker. Android sets
+  `setHandleAudioBecomingNoisy`, iOS observes route changes.
+* iOS now observes audio session interruptions, so a call or alarm no longer
+  leaves the player reporting itself as playing after the system silenced it.
 
 ## 1.4.1
 

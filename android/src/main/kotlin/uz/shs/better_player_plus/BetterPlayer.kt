@@ -506,6 +506,8 @@ internal class BetterPlayer(
                 sendPlaybackMetrics()
             }
         })
+        // Pause instead of switching to the speaker when headphones are removed.
+        exoPlayer?.setHandleAudioBecomingNoisy(true)
         exoPlayer?.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
