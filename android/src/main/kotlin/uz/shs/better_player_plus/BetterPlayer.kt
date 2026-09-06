@@ -803,6 +803,12 @@ internal class BetterPlayer(
         eventSink.success(event)
     }
 
+    fun onPictureInPictureRestored() {
+        val event: MutableMap<String, Any> = HashMap()
+        event["event"] = "pipRestore"
+        eventSink.success(event)
+    }
+
     fun disposeMediaSession() {
         if (mediaSession != null) {
             mediaSession?.release()

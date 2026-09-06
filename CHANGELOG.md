@@ -1,5 +1,11 @@
 ## 1.5.0
 
+* Android now starts Picture in Picture automatically when the viewer leaves the
+  app while a video is playing, matching the iOS behaviour. API 31 and above use
+  `setAutoEnterEnabled`; 26 to 30 fall back to the activity's user leave hint.
+* Android now emits `pipRestore` when the viewer expands the PiP window rather
+  than closing it, so an app that gave up its player route can bring it back.
+  Detected from window focus, since Android has no restore callback.
 * Added `BetterPlayerEventType.pipRestore`, emitted when the viewer taps the
   Picture in Picture window to return to the app. `pipStop` fires for both that
   and closing the window, so an app that gave up its player route could not tell

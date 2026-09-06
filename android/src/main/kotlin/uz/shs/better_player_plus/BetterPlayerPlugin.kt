@@ -25,6 +25,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.EventChannel
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.PluginRegistry
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.view.TextureRegistry
 import java.lang.Exception
@@ -42,6 +43,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private var currentNotificationTextureId: Long = -1
     private var currentNotificationDataSource: Map<String, Any?>? = null
     private var activity: Activity? = null
+    private var activityBinding: ActivityPluginBinding? = null
     private var pipHandler: Handler? = null
     private var pipRunnable: Runnable? = null
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
@@ -80,19 +82,57 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activity = binding.activity
+        attachActivity(binding)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        activity = null
+        detachActivity()
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        activity = binding.activity
+        attachActivity(binding)
     }
 
     override fun onDetachedFromActivity() {
+        detachActivity()
+    }
+
+    private fun attachActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        activityBinding = binding
+        // Below API 31 there is no auto enter flag, so leaving the app is the only
+        // moment PiP can still be started programmatically.
+        binding.addOnUserLeaveHintListener(userLeaveHintListener)
+    }
+
+    private fun detachActivity() {
+        activityBinding?.removeOnUserLeaveHintListener(userLeaveHintListener)
+        activityBinding = null
         activity = null
+    }
+
+    private val userLeaveHintListener = PluginRegistry.UserLeaveHintListener {
+        if (Build.VERSION.SDK_INT in Build.VERSION_CODES.O until Build.VERSION_CODES.S) {
+            autoEnterPlayer?.let { player ->
+                if (isPictureInPictureSupported()) enablePictureInPicture(player)
+            }
+        }
+    }
+
+    /// The player that should follow the viewer out of the app, mirroring the iOS
+    /// behaviour where an inline playing video starts PiP on its own.
+    private var autoEnterPlayer: BetterPlayer? = null
+
+    private fun setAutoPictureInPicture(player: BetterPlayer, enabled: Boolean) {
+        autoEnterPlayer = if (enabled) player else null
+        val currentActivity = activity ?: return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        currentActivity.setPictureInPictureParams(
+            PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+                .setAutoEnterEnabled(enabled)
+                .build()
+        )
     }
 
     @UnstableApi
@@ -189,11 +229,13 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             PLAY_METHOD -> {
                 setupNotification(player)
                 player.play()
+                setAutoPictureInPicture(player, isPictureInPictureSupported())
                 result.success(null)
             }
 
             PAUSE_METHOD -> {
                 player.pause()
+                setAutoPictureInPicture(player, false)
                 result.success(null)
             }
 
@@ -261,6 +303,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             }
 
             DISPOSE_METHOD -> {
+                setAutoPictureInPicture(player, false)
                 dispose(player, textureId)
                 result.success(null)
             }
@@ -480,9 +523,17 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private fun startPictureInPictureListenerTimer(player: BetterPlayer) {
         pipHandler = Handler(Looper.getMainLooper())
         pipRunnable = Runnable {
-            if (activity!!.isInPictureInPictureMode) {
-                pipHandler!!.postDelayed(pipRunnable!!, 100)
+            val currentActivity = activity
+            if (currentActivity != null && currentActivity.isInPictureInPictureMode) {
+                pipHandler?.postDelayed(pipRunnable!!, 100)
             } else {
+                // Android has no restore callback the way AVKit does. Expanding the
+                // window returns the activity to the foreground with focus; closing
+                // it leaves the activity in the background. That difference is the
+                // only signal available here.
+                if (currentActivity?.hasWindowFocus() == true) {
+                    player.onPictureInPictureRestored()
+                }
                 player.onPictureInPictureStatusChanged(false)
                 player.disposeMediaSession()
                 stopPipHandler()
