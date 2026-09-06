@@ -741,6 +741,9 @@ class BetterPlayerController {
       _postEvent(BetterPlayerEvent(BetterPlayerEventType.initialized));
     }
     if (currentVideoPlayerValue.isPip) {
+      if (!_wasInPipMode) {
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.pipStart));
+      }
       _wasInPipMode = true;
     } else if (_wasInPipMode) {
       _postEvent(BetterPlayerEvent(BetterPlayerEventType.pipStop));

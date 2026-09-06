@@ -562,12 +562,19 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 // window returns the activity to the foreground with focus; closing
                 // it leaves the activity in the background. That difference is the
                 // only signal available here.
-                if (currentActivity?.hasWindowFocus() == true) {
-                    player.onPictureInPictureRestored()
-                }
-                player.onPictureInPictureStatusChanged(false)
-                player.disposeMediaSession()
                 stopPipHandler()
+                // Focus has not settled the instant the mode flips, so reading it
+                // immediately reports a restore as a close.
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (activity?.hasWindowFocus() == true) {
+                        Log.d(TAG, "pip expanded, emitting pipRestore")
+                        player.onPictureInPictureRestored()
+                    } else {
+                        Log.d(TAG, "pip closed")
+                    }
+                    player.onPictureInPictureStatusChanged(false)
+                    player.disposeMediaSession()
+                }, 300)
             }
         }
         pipHandler!!.post(pipRunnable!!)
