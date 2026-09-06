@@ -37,6 +37,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     public var pictureInPicture: Bool = false
     public var observersAdded: Bool = false
     private weak var observedItem: AVPlayerItem?
+    private var legibleOutput: AVPlayerItemLegibleOutput?
     public var stalledCount: Int = 0
     public var isStalledCheckStarted: Bool = false
     public var playerRate: Float = 1.0
@@ -115,6 +116,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             item.addObserver(self, forKeyPath: "playbackBufferFull", options: [], context: &playbackBufferFullContext)
             NotificationCenter.default.addObserver(self, selector: #selector(itemDidPlayToEndTime(_:)), name: .AVPlayerItemDidPlayToEndTime, object: item)
             NotificationCenter.default.addObserver(self, selector: #selector(itemNewAccessLogEntry(_:)), name: .AVPlayerItemNewAccessLogEntry, object: item)
+            addLegibleOutput(item)
             observedItem = item
             observersAdded = true
         }
@@ -132,6 +134,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             item?.removeObserver(self, forKeyPath: "playbackBufferFull", context: &playbackBufferFullContext)
             NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: item)
             NotificationCenter.default.removeObserver(self, name: .AVPlayerItemNewAccessLogEntry, object: item)
+            removeLegibleOutput(item)
             observedItem = nil
             observersAdded = false
         }
@@ -163,6 +166,22 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             metrics["bandwidthEstimate"] = NSNumber(value: Int(entry.observedBitrate))
         }
         eventSink(metrics)
+    }
+
+    /// Captions muxed into the stream are decoded by AVPlayer but never surfaced.
+    /// A legible output is the only way to read them.
+    private func addLegibleOutput(_ item: AVPlayerItem) {
+        let output = AVPlayerItemLegibleOutput()
+        output.setDelegate(self, queue: .main)
+        item.add(output)
+        legibleOutput = output
+    }
+
+    private func removeLegibleOutput(_ item: AVPlayerItem?) {
+        guard let output = legibleOutput else { return }
+        output.setDelegate(nil, queue: nil)
+        item?.remove(output)
+        legibleOutput = nil
     }
 
     @objc private func itemDidPlayToEndTime(_ notification: Notification) {
@@ -785,5 +804,18 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     deinit {
         NotificationCenter.default.removeObserver(self)
         removeObservers()
+    }
+}
+
+extension BetterPlayer: AVPlayerItemLegibleOutputPushDelegate {
+    public func legibleOutput(
+        _ output: AVPlayerItemLegibleOutput,
+        didOutputAttributedStrings strings: [NSAttributedString],
+        nativeSampleBuffers nativeSamples: [Any],
+        forItemTime itemTime: CMTime
+    ) {
+        guard let eventSink = eventSink, key != nil else { return }
+        let cues = strings.map { $0.string }.filter { !$0.isEmpty }
+        eventSink(["event": "cuesChanged", "cues": cues, "key": key as Any])
     }
 }

@@ -268,6 +268,12 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
                 bandwidthEstimate: (map['bandwidthEstimate'] as num?)?.toInt(),
               ),
             );
+          case 'cuesChanged':
+            return VideoEvent(
+              eventType: VideoEventType.cuesChanged,
+              key: key,
+              cues: (map['cues'] as List?)?.map((cue) => cue.toString()).toList() ?? const [],
+            );
           case 'completed':
             return VideoEvent(eventType: VideoEventType.completed, key: key);
           case 'bufferingUpdate':

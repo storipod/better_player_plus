@@ -45,6 +45,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.VideoSize
+import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSource
@@ -541,6 +542,14 @@ internal class BetterPlayer(
 
             override fun onVideoSizeChanged(videoSize: VideoSize) {
                 sendVideoSizeChanged(videoSize)
+            }
+
+            override fun onCues(cueGroup: CueGroup) {
+                val event: MutableMap<String, Any?> = HashMap()
+                event["event"] = "cuesChanged"
+                event["key"] = key
+                event["cues"] = cueGroup.cues.mapNotNull { it.text?.toString() }
+                eventSink.success(event)
             }
 
             override fun onPlayerError(error: PlaybackException) {

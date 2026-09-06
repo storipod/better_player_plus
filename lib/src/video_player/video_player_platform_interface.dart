@@ -376,6 +376,7 @@ class VideoEvent {
     this.size,
     this.bitrate,
     this.metrics,
+    this.cues,
     this.buffered,
     this.position,
   });
@@ -403,6 +404,8 @@ class VideoEvent {
 
   /// Quality of experience figures, when the event carries them.
   final VideoPlaybackMetrics? metrics;
+  /// Subtitle lines active at this moment, empty when the cue cleared.
+  final List<String>? cues;
 
   /// Buffered parts of the video.
   ///
@@ -495,6 +498,8 @@ enum VideoEventType {
 
   /// Playback quality figures were updated.
   playbackMetrics,
+  /// The subtitle text the platform is currently rendering changed.
+  cuesChanged,
 
   /// An unknown event has been received.
   unknown,
