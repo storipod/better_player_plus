@@ -746,6 +746,10 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     }
 
     public func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+        // Emitted before completing, because pipStop alone cannot tell the app
+        // whether the viewer tapped restore or simply closed the window, and only
+        // restore should bring the player UI back.
+        eventSink?(["event": "pipRestore", "key": key as Any])
         restoreUIOnPipStop = completionHandler
         setRestoreUserInterfaceForPIPStopCompletionHandler(true)
     }

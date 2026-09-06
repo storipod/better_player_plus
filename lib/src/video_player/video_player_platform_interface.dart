@@ -509,6 +509,12 @@ enum VideoEventType {
   /// Picture in picture mode has been dismissed
   pipStop,
 
+  /// The viewer tapped the picture in picture window to return to the app.
+  ///
+  /// iOS only. Android brings the activity back itself and has no equivalent
+  /// callback.
+  pipRestore,
+
   /// The dimensions of the video changed, which on an adaptive stream means
   /// a different rendition is now being decoded.
   videoSizeChanged,

@@ -321,6 +321,9 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           case 'pipStop':
             return VideoEvent(eventType: VideoEventType.pipStop, key: key);
 
+          case 'pipRestore':
+            return VideoEvent(eventType: VideoEventType.pipRestore, key: key);
+
           default:
             return VideoEvent(eventType: VideoEventType.unknown, key: key);
         }

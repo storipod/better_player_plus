@@ -20,6 +20,7 @@ enum BetterPlayerEventType {
   changedResolution,
   pipStart,
   pipStop,
+  pipRestore,
   setupDataSource,
   bufferingStart,
   bufferingUpdate,
