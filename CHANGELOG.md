@@ -8,6 +8,13 @@
   aspect ratio and rotation so it matches the iOS value.
 * iOS reports it from the existing `presentationSize` observer, which until now
   only reached `onReadyToPlay` and was discarded once initialised.
+* Added `VideoPlayerValue.errorDetails`, carrying the Media3 `errorCode` and
+  `errorCodeName` on Android, the NSError domain and code on iOS, and `httpStatus`
+  on both when the failure came from a response code. Previously every failure
+  arrived as one unstructured string, so an expired token and a dropped network
+  were indistinguishable.
+* Fixed a non `PlatformException` error being discarded by a `copyWith` whose
+  result was never assigned.
 
 ## 1.4.1
 

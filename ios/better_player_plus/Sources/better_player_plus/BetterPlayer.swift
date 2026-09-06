@@ -282,7 +282,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
                 stalledCount += 1
                 if stalledCount > 60 {
                     if let eventSink = eventSink {
-                        let error = FlutterError(code: "VideoError", message: "Failed to load video: playback stalled", details: nil)
+                        let error = FlutterError(code: "VideoError", message: "Failed to load video: playback stalled", details: errorDetails(nil))
                         eventSink(error)
                     }
                     return
@@ -356,7 +356,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
                     NSLog("Failed to load video: \(String(describing: item.error?.localizedDescription))")
                     if let eventSink = eventSink {
                         let message = "Failed to load video: \(item.error?.localizedDescription ?? "unknown")"
-                        let error = FlutterError(code: "VideoError", message: message, details: nil)
+                        let error = FlutterError(code: "VideoError", message: message, details: errorDetails(item.error))
                         eventSink(error)
                     }
                 case .unknown:
@@ -410,6 +410,25 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
                    "width": NSNumber(value: Float(size.width)),
                    "height": NSNumber(value: Float(size.height)),
                    "key": key as Any])
+    }
+
+    /// A localised description cannot be branched on. The NSError domain and code,
+    /// plus the HTTP status from the item's error log, let the app tell an expired
+    /// token from a dead network.
+    private func errorDetails(_ error: Error?) -> [String: Any] {
+        var details: [String: Any] = [:]
+        if let nsError = error as NSError? {
+            details["domain"] = nsError.domain
+            details["code"] = nsError.code
+            if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+                details["underlyingDomain"] = underlying.domain
+                details["underlyingCode"] = underlying.code
+            }
+        }
+        if let entry = player.currentItem?.errorLog()?.events.last, entry.errorStatusCode != 0 {
+            details["httpStatus"] = entry.errorStatusCode
+        }
+        return details
     }
 
     public func onReadyToPlay() {

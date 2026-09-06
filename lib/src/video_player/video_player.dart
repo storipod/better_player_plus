@@ -32,6 +32,7 @@ class VideoPlayerValue {
     this.volume = 1.0,
     this.speed = 1.0,
     this.errorDescription,
+    this.errorDetails,
     this.isPip = false,
     this.aspectRatioIOS = '',
   });
@@ -79,6 +80,12 @@ class VideoPlayerValue {
   /// If [hasError] is false this is [null].
   final String? errorDescription;
 
+  /// Platform detail behind [errorDescription]. Android sends the Media3
+  /// `errorCode` and `errorCodeName`, iOS the NSError domain and code, and
+  /// both send `httpStatus` when the failure came from a response code.
+  /// Without it a expired token and a dead network are the same string.
+  final Map<String, dynamic>? errorDetails;
+
   /// The [size] of the currently loaded video.
   ///
   /// Is null when [initialized] is false.
@@ -123,6 +130,7 @@ class VideoPlayerValue {
     bool? isBuffering,
     double? volume,
     String? errorDescription,
+    Map<String, dynamic>? errorDetails,
     double? speed,
     bool? isPip,
     String? aspectRatioIOS,
@@ -138,6 +146,7 @@ class VideoPlayerValue {
     volume: volume ?? this.volume,
     speed: speed ?? this.speed,
     errorDescription: errorDescription ?? this.errorDescription,
+    errorDetails: errorDetails ?? this.errorDetails,
     isPip: isPip ?? this.isPip,
     aspectRatioIOS: aspectRatioIOS ?? this.aspectRatioIOS,
   );
@@ -155,7 +164,8 @@ class VideoPlayerValue {
       'isBuffering: $isBuffering, '
       'volume: $volume, '
       'aspectRatioIOS: $aspectRatioIOS, '
-      'errorDescription: $errorDescription)';
+      'errorDescription: $errorDescription, '
+      'errorDetails: $errorDetails)';
 }
 
 /// Controls a platform video player, and provides updates when the state is
@@ -247,10 +257,16 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
     void errorListener(Object object) {
       if (object is PlatformException) {
-        final PlatformException e = object;
-        value = value.copyWith(errorDescription: e.message);
+        value = value.copyWith(
+          errorDescription: object.message,
+          errorDetails: switch (object.details) {
+            final Map<dynamic, dynamic> details => details.map((key, value) => MapEntry(key.toString(), value)),
+            _ => null,
+          },
+        );
       } else {
-        value.copyWith(errorDescription: object.toString());
+        // Was previously discarded, so a non platform error left no trace.
+        value = value.copyWith(errorDescription: object.toString());
       }
       _timer?.cancel();
       if (!_initializingCompleter.isCompleted) {
