@@ -35,6 +35,7 @@ class VideoPlayerValue {
     this.errorDetails,
     this.bitrate,
     this.metrics,
+    this.track,
     this.isPip = false,
     this.aspectRatioIOS = '',
   });
@@ -86,6 +87,8 @@ class VideoPlayerValue {
 
   /// Latest quality of experience figures reported by the platform.
   final VideoPlaybackMetrics? metrics;
+  /// The video track the player selected. Android only.
+  final VideoTrackInfo? track;
 
   final String? errorDescription;
 
@@ -142,6 +145,7 @@ class VideoPlayerValue {
     Map<String, dynamic>? errorDetails,
     int? bitrate,
     VideoPlaybackMetrics? metrics,
+    VideoTrackInfo? track,
     double? speed,
     bool? isPip,
     String? aspectRatioIOS,
@@ -160,6 +164,7 @@ class VideoPlayerValue {
     errorDetails: errorDetails ?? this.errorDetails,
     bitrate: bitrate ?? this.bitrate,
     metrics: metrics ?? this.metrics,
+    track: track ?? this.track,
     isPip: isPip ?? this.isPip,
     aspectRatioIOS: aspectRatioIOS ?? this.aspectRatioIOS,
   );
@@ -245,6 +250,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           value = value.copyWith(metrics: event.metrics);
         case VideoEventType.videoBitrateChanged:
           value = value.copyWith(bitrate: event.bitrate);
+        case VideoEventType.tracksChanged:
+          value = value.copyWith(track: event.track);
         case VideoEventType.completed:
           value = value.copyWith(isPlaying: false, position: value.duration);
           _timer?.cancel();
