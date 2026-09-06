@@ -1,5 +1,7 @@
 ## 1.5.0
 
+* Fixed a duplicate `androidx.media3.common.Format` import that broke the Android
+  build with an ambiguous import error.
 * Android now starts Picture in Picture automatically when the viewer leaves the
   app while a video is playing, matching the iOS behaviour. API 31 and above use
   `setAutoEnterEnabled`; 26 to 30 fall back to the activity's user leave hint.
