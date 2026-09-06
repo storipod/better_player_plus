@@ -245,6 +245,12 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
               duration: Duration(milliseconds: map['duration'] as int),
               size: size,
             );
+          case 'videoSizeChanged':
+            return VideoEvent(
+              eventType: VideoEventType.videoSizeChanged,
+              key: key,
+              size: Size((map['width'] as num).toDouble(), (map['height'] as num).toDouble()),
+            );
           case 'completed':
             return VideoEvent(eventType: VideoEventType.completed, key: key);
           case 'bufferingUpdate':

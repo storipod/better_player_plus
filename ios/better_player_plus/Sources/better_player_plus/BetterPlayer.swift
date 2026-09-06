@@ -347,6 +347,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
                 eventSink(["event": "bufferingUpdate", "values": values, "key": key as Any])
             }
         } else if context == &presentationSizeContext {
+            sendVideoSizeChanged()
             onReadyToPlay()
         } else if context == &statusContext {
             if let item = object as? AVPlayerItem {
@@ -398,6 +399,17 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
             player.play()
             player.rate = playerRate
         }
+    }
+
+    /// onReadyToPlay guards on !isInitialized, so after the first frame the
+    /// presentationSize observer has nowhere to report a rendition change.
+    private func sendVideoSizeChanged() {
+        guard let eventSink = eventSink, key != nil else { return }
+        guard let size = player.currentItem?.presentationSize, size.width > 0, size.height > 0 else { return }
+        eventSink(["event": "videoSizeChanged",
+                   "width": NSNumber(value: Float(size.width)),
+                   "height": NSNumber(value: Float(size.height)),
+                   "key": key as Any])
     }
 
     public func onReadyToPlay() {

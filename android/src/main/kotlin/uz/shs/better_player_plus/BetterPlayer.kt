@@ -43,6 +43,7 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSource
@@ -499,6 +500,10 @@ internal class BetterPlayer(
                 }
             }
 
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                sendVideoSizeChanged(videoSize)
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 eventSink.error("VideoError", "Video player had error $error", "")
             }
@@ -622,6 +627,26 @@ internal class BetterPlayer(
             }
             eventSink.success(event)
         }
+    }
+
+    /// Media3 reports the decoder output, so this fires on every rendition
+    /// change rather than only at load.
+    private fun sendVideoSizeChanged(videoSize: VideoSize) {
+        if (videoSize.width == 0 || videoSize.height == 0) return
+        var width = (videoSize.width * videoSize.pixelWidthHeightRatio).toInt()
+        var height = videoSize.height
+        // Match sendInitialized, which reports portrait footage the way it displays.
+        if (videoSize.unappliedRotationDegrees == 90 || videoSize.unappliedRotationDegrees == 270) {
+            val swap = width
+            width = height
+            height = swap
+        }
+        val event: MutableMap<String, Any?> = HashMap()
+        event["event"] = "videoSizeChanged"
+        event["key"] = key
+        event["width"] = width
+        event["height"] = height
+        eventSink.success(event)
     }
 
     private fun getDuration(): Long = exoPlayer?.duration ?: 0L
