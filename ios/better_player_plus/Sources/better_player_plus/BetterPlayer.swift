@@ -45,6 +45,16 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     public var lastAvPlayerTimeControlStatus: AVPlayer.TimeControlStatus? = nil
 
     private var pipController: AVPictureInPictureController?
+
+    /// Whether this player is allowed to hand playback to a PiP window.
+    ///
+    /// Off until `enablePictureInPicture` asks for it. Arming is otherwise
+    /// automatic -- `view()` and `play()` both call `armPictureInPicture()` --
+    /// which means a host app that never calls `enablePictureInPicture` still
+    /// got a PiP window when the viewer left the app, with no way to opt out
+    /// from Dart. Gating on an explicit request makes "no PiP" the default and
+    /// leaves the opt-in path unchanged.
+    private var pipAllowed = false
     private var restoreUIOnPipStop: ((Bool) -> Void)?
     /// Invalidates a pending background-pause check when a newer one supersedes it.
     private var backgroundPauseGeneration = 0
@@ -658,6 +668,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     ///   old code built the controller 0.2s after the button press — can never
     ///   produce background PiP.
     private func armPictureInPicture() {
+        guard pipAllowed else { return }
         guard AVPictureInPictureController.isPictureInPictureSupported(), let layer = displayLayer else { return }
         // Never swap the controller out from under a live PiP session — that would
         // orphan the window the viewer is watching.
@@ -674,6 +685,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     public func enablePictureInPicture(_ frame: CGRect) {
         // `frame` is ignored: the layer is the Flutter platform view, so Flutter
         // already owns its geometry. The parameter stays for channel compatibility.
+        pipAllowed = true
         try? AVAudioSession.sharedInstance().setActive(true)
         armPictureInPicture()
         setPictureInPicture(true)
@@ -717,6 +729,7 @@ public class BetterPlayer: NSObject, FlutterPlatformView, FlutterStreamHandler, 
     /// the app with the video still playing after the viewer navigated away.
     /// Detaching the player from the layer is what genuinely closes the window.
     private func tearDownPictureInPicture() {
+        pipAllowed = false
         guard let pip = pipController else { return }
         pictureInPicture = false
         pipController = nil
